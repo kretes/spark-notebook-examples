@@ -1,0 +1,49 @@
+{
+  "metadata" : {
+    "name" : "BigSparkSQLDemo",
+    "user_save_timestamp" : "1970-01-01T01:00:00.000Z",
+    "auto_save_timestamp" : "1970-01-01T01:00:00.000Z",
+    "language_info" : {
+      "name" : "scala",
+      "file_extension" : "scala",
+      "codemirror_mode" : "text/x-scala"
+    },
+    "trusted" : true,
+    "customLocalRepo" : null,
+    "customRepos" : null,
+    "customDeps" : null,
+    "customImports" : null,
+    "customSparkConf" : null
+  },
+  "cells" : [ {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "import org.joda.time.DateTime\ntype UserId = String\n  type EventType = String\n\n  case class UserEvent(userId: UserId, eventType: EventType, dateTimeMillis: Long) {\n    def isPageView = eventType == \"P\"\n  }\n\n  def parseToUserEvent(line: String) = {\n    val split: Array[String] = line.split(\",\")\n    split match {\n      case Array(userId, eventType, dateTime) => UserEvent(userId, eventType, DateTime.parse(dateTime).getMillis)\n    }\n  }\nval sqlContext = new org.apache.spark.sql.SQLContext(sparkContext)\nimport sqlContext.implicits._\nval userEventsDF = sparkContext.textFile(\"/data/userEventsBig\")\n    .map(parseToUserEvent).toDF()\nuserEventsDF.registerTempTable(\"user_events\")\nsqlContext.sql(\"\"\"\n  select userId,count(*) cnt \n  from user_events \n  where eventType='P' \n  group by userId \n  order by cnt desc \n  limit 10\n\"\"\").foreach(println)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "[52560,10250]\n[193815,10216]\n[95922,10194]\n[95265,10187]\n[100959,10187]\n[198414,10186]\n[32631,10179]\n[181551,10178]\n[27813,10173]\n[122421,10168]\nimport org.joda.time.DateTime\ndefined type alias UserId\ndefined type alias EventType\ndefined class UserEvent\nparseToUserEvent: (line: String)UserEvent\nsqlContext: org.apache.spark.sql.SQLContext = org.apache.spark.sql.SQLContext@e8baf26\nimport sqlContext.implicits._\nuserEventsDF: org.apache.spark.sql.DataFrame = [userId: string, eventType: string, dateTimeMillis: bigint]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>39 seconds 40 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 2
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : true
+    },
+    "cell_type" : "code",
+    "source" : "",
+    "outputs" : [ ]
+  } ],
+  "nbformat" : 4
+}

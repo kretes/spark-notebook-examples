@@ -1,0 +1,140 @@
+{
+  "metadata" : {
+    "name" : "SparkSQLDemo",
+    "user_save_timestamp" : "1970-01-01T01:00:00.000Z",
+    "auto_save_timestamp" : "1970-01-01T01:00:00.000Z",
+    "language_info" : {
+      "name" : "scala",
+      "file_extension" : "scala",
+      "codemirror_mode" : "text/x-scala"
+    },
+    "trusted" : true,
+    "customLocalRepo" : null,
+    "customRepos" : null,
+    "customDeps" : null,
+    "customImports" : null,
+    "customSparkConf" : null
+  },
+  "cells" : [ {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "import org.joda.time.DateTime\ntype UserId = String\n  type EventType = String\n\n  case class UserEvent(userId: UserId, eventType: EventType, dateTimeMillis: Long) {\n    def isPageView = eventType == \"P\"\n  }\n\n  def parseToUserEvent(line: String) = {\n    val split: Array[String] = line.split(\",\")\n    split match {\n      case Array(userId, eventType, dateTime) => UserEvent(userId, eventType, DateTime.parse(dateTime).getMillis)\n    }\n  }",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import org.joda.time.DateTime\ndefined type alias UserId\ndefined type alias EventType\ndefined class UserEvent\nparseToUserEvent: (line: String)UserEvent\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>126 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 44
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "val sqlContext = new org.apache.spark.sql.SQLContext(sparkContext)\nimport sqlContext.implicits._\nval userEventsDF = sparkContext.textFile(\"/data/userEvents\")\n    .map(parseToUserEvent).toDF()",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "sqlContext: org.apache.spark.sql.SQLContext = org.apache.spark.sql.SQLContext@39fe5287\nimport sqlContext.implicits._\nuserEventsDF: org.apache.spark.sql.DataFrame = [userId: string, eventType: string, dateTimeMillis: bigint]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "[userId: string, eventType: string, dateTimeMillis: bigint]\n <div class='pull-right text-info'><small>331 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 45
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "userEventsDF.registerTempTable(\"user_events\")\nsqlContext.sql(\"\"\"\n  select userId,count(*) cnt \n  from user_events \n  where eventType='P' \n  group by userId \n  order by cnt desc \n  limit 10\n\"\"\").foreach(println)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "[211554,122]\n[35259,120]\n[105339,120]\n[187464,120]\n[157899,119]\n[91542,118]\n[172572,118]\n[146949,118]\n[210897,118]\n[98112,117]\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>2 seconds 255 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 46
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "userEventsDF.show()",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "userId eventType dateTimeMillis\n219    B         1429738027237 \n438    P         1429738027237 \n657    P         1429738027237 \n876    P         1429738027237 \n1095   B         1429738027237 \n1314   P         1429738027237 \n1533   B         1429738027237 \n1752   B         1429738027237 \n1971   P         1429738027237 \n2190   P         1429738027237 \n2409   P         1429738027237 \n2628   P         1429738027237 \n2847   B         1429738027238 \n3066   P         1429738027238 \n3285   P         1429738027238 \n3504   P         1429738027238 \n3723   P         1429738027238 \n3942   B         1429738027238 \n4161   P         1429738027238 \n4380   B         1429738027238 \n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>294 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 43
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "userEventsDF.printSchema()",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "root\n |-- userId: string (nullable = true)\n |-- eventType: string (nullable = true)\n |-- dateTimeMillis: long (nullable = false)\n\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>292 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 28
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "userEventsDF.filter(\"eventType = 'P'\").groupBy(\"userId\").count().show()",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "userId count\n29127  100  \n22557  101  \n65262  100  \n186369 96   \n140379 111  \n211992 96   \n183084 107  \n147606 98   \n117384 114  \n183741 85   \n218562 90   \n28689  84   \n9417   110  \n202137 102  \n2847   101  \n144321 93   \n94389  112  \n101616 87   \n55626  97   \n98331  87   \n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>2 seconds 376 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 34
+    } ]
+  } ],
+  "nbformat" : 4
+}

@@ -1,0 +1,125 @@
+{
+  "metadata" : {
+    "name" : "UserEventsDemo",
+    "user_save_timestamp" : "1970-01-01T01:00:00.000Z",
+    "auto_save_timestamp" : "1970-01-01T01:00:00.000Z",
+    "language_info" : {
+      "name" : "scala",
+      "file_extension" : "scala",
+      "codemirror_mode" : "text/x-scala"
+    },
+    "trusted" : true,
+    "customLocalRepo" : null,
+    "customRepos" : null,
+    "customDeps" : null,
+    "customImports" : null,
+    "customSparkConf" : null
+  },
+  "cells" : [ {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "import sys.process._\nprintln(\"head /data/userEvents/part-00000\"!!)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "warning: there were 1 feature warning(s); re-run with -feature for details\n219,B,2015-04-22T23:27:07.208+02:00\n438,B,2015-04-22T23:27:07.208+02:00\n657,B,2015-04-22T23:27:07.208+02:00\n876,P,2015-04-22T23:27:07.208+02:00\n1095,P,2015-04-22T23:27:07.208+02:00\n1314,B,2015-04-22T23:27:07.208+02:00\n1533,B,2015-04-22T23:27:07.208+02:00\n1752,P,2015-04-22T23:27:07.208+02:00\n1971,B,2015-04-22T23:27:07.208+02:00\n2190,P,2015-04-22T23:27:07.208+02:00\n\nimport sys.process._\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>389 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 23
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "import org.joda.time.DateTime\ntype UserId = String\n  type EventType = String\n\n  case class UserEvent(userId: UserId, eventType: EventType, dateTime: DateTime) {\n    def isPageView = eventType == \"P\"\n  }\n\n  def parseToUserEvent(line: String) = {\n    val split: Array[String] = line.split(\",\")\n    split match {\n      case Array(userId, eventType, dateTime) => UserEvent(userId, eventType, DateTime.parse(dateTime))\n    }\n  }",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "import org.joda.time.DateTime\ndefined type alias UserId\ndefined type alias EventType\ndefined class UserEvent\nparseToUserEvent: (line: String)UserEvent\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>269 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 24
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "val aggregateRdd = \n   sparkContext.textFile(\"/data/userEvents\")\n    .map(parseToUserEvent)\n    .filter(_.isPageView)\n    .groupBy(_.userId)   \n    .map { case (userId, userEvents) => \n          s\"$userId,${userEvents.size}\" }",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "aggregateRdd: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[66] at map at <console>:81\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>1 second 306 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 25
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "aggregateRdd.saveAsTextFile(\"/data/pageViewAgg\")",
+    "outputs" : [ {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>771 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 27
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "println(\"head /data/pageViewAgg/part-00000\"!!)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "warning: there were 1 feature warning(s); re-run with -feature for details\n80154,103\n183741,85\n44019,106\n26499,94\n41610,93\n96360,98\n108405,104\n166221,101\n75336,109\n65700,109\n\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>325 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 28
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : true
+    },
+    "cell_type" : "code",
+    "source" : "",
+    "outputs" : [ ]
+  } ],
+  "nbformat" : 4
+}
