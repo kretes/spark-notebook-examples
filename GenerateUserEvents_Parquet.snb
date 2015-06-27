@@ -1,0 +1,65 @@
+{
+  "metadata" : {
+    "name" : "GenerateUserEvents_Parquet",
+    "user_save_timestamp" : "1970-01-01T01:00:00.000Z",
+    "auto_save_timestamp" : "1970-01-01T01:00:00.000Z",
+    "language_info" : {
+      "name" : "scala",
+      "file_extension" : "scala",
+      "codemirror_mode" : "text/x-scala"
+    },
+    "trusted" : true,
+    "customLocalRepo" : null,
+    "customRepos" : null,
+    "customDeps" : null,
+    "customImports" : null,
+    "customSparkConf" : null
+  },
+  "cells" : [ {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : true
+    },
+    "cell_type" : "code",
+    "source" : "type UserId = Long\ntype EventType = String\n\ncase class UserEvent(userId: UserId, eventType: EventType, dateTimeMillis: Long) {\n  def isPageView = eventType == \"P\"\n}\n\nval sqlContext = new org.apache.spark.sql.SQLContext(sparkContext)\nimport sqlContext.implicits._\n\n\nval rdd = sparkContext.parallelize(Seq(1,3,4))\n\n//sut.run(rdd)\n\n\n.map(i => UserEvent((i % 1000)*219, if (scala.util.Random.nextBoolean) \"P\" else \"B\", scala.util.Random.nextInt(Int.MaxValue)))\n.cache()\nval df = rdd.toDF()",
+    "outputs" : [ ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : true
+    },
+    "cell_type" : "code",
+    "source" : "df.show(10)",
+    "outputs" : [ ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : true
+    },
+    "cell_type" : "code",
+    "source" : "df.write.format(\"json\").save(\"/data/userEvents.json\")",
+    "outputs" : [ ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : true
+    },
+    "cell_type" : "code",
+    "source" : "rdd.map(e => s\"${e.userId},${e.eventType},${new org.joda.time.DateTime(e.dateTimeMillis)}\").saveAsTextFile(\"/data/userEvents\")",
+    "outputs" : [ ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : true
+    },
+    "cell_type" : "code",
+    "source" : "df.write.format(\"parquet\").save(\"/data/userEvents.parquet\")",
+    "outputs" : [ ]
+  } ],
+  "nbformat" : 4
+}

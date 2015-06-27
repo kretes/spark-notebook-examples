@@ -22,18 +22,18 @@
       "collapsed" : false
     },
     "cell_type" : "code",
-    "source" : "import org.joda.time.DateTime\ntype UserId = String\n  type EventType = String\n\n  case class UserEvent(userId: UserId, eventType: EventType, dateTimeMillis: Long) {\n    def isPageView = eventType == \"P\"\n  }\n\n  def parseToUserEvent(line: String) = {\n    val split: Array[String] = line.split(\",\")\n    split match {\n      case Array(userId, eventType, dateTime) => UserEvent(userId, eventType, DateTime.parse(dateTime).getMillis)\n    }\n  }",
+    "source" : "  type UserId = Long\n  type EventType = String\n\n  case class UserEvent(userId: UserId, eventType: EventType, dateTimeMillis: Long) {\n    def isPageView = eventType == \"P\"\n  }\nimport scala.sys.process._\nprintln(\"head /data/userEvents.json/part-00000\"!!)",
     "outputs" : [ {
       "name" : "stdout",
       "output_type" : "stream",
-      "text" : "import org.joda.time.DateTime\ndefined type alias UserId\ndefined type alias EventType\ndefined class UserEvent\nparseToUserEvent: (line: String)UserEvent\n"
+      "text" : "warning: there were 1 feature warning(s); re-run with -feature for details\n{\"userId\":219,\"eventType\":\"B\",\"dateTimeMillis\":1500388651}\n{\"userId\":438,\"eventType\":\"P\",\"dateTimeMillis\":1449157536}\n{\"userId\":657,\"eventType\":\"P\",\"dateTimeMillis\":700562751}\n{\"userId\":876,\"eventType\":\"B\",\"dateTimeMillis\":818520884}\n{\"userId\":1095,\"eventType\":\"P\",\"dateTimeMillis\":779763044}\n{\"userId\":1314,\"eventType\":\"P\",\"dateTimeMillis\":1615681284}\n{\"userId\":1533,\"eventType\":\"P\",\"dateTimeMillis\":592482142}\n{\"userId\":1752,\"eventType\":\"P\",\"dateTimeMillis\":1533747071}\n{\"userId\":1971,\"eventType\":\"P\",\"dateTimeMillis\":489856665}\n{\"userId\":2190,\"eventType\":\"P\",\"dateTimeMillis\":2039051537}\n\ndefined type alias UserId\ndefined type alias EventType\ndefined class UserEvent\nimport scala.sys.process._\n"
     }, {
       "metadata" : { },
       "data" : {
-        "text/html" : "\n <div class='pull-right text-info'><small>126 milliseconds</small></div>"
+        "text/html" : "\n <div class='pull-right text-info'><small>443 milliseconds</small></div>"
       },
       "output_type" : "execute_result",
-      "execution_count" : 44
+      "execution_count" : 1
     } ]
   }, {
     "metadata" : {
@@ -42,18 +42,18 @@
       "collapsed" : false
     },
     "cell_type" : "code",
-    "source" : "val sqlContext = new org.apache.spark.sql.SQLContext(sparkContext)\nimport sqlContext.implicits._\nval userEventsDF = sparkContext.textFile(\"/data/userEvents\")\n    .map(parseToUserEvent).toDF()",
+    "source" : "val sqlContext = new org.apache.spark.sql.SQLContext(sparkContext)\nimport sqlContext.implicits._\nval userEventsDF = sqlContext.read.format(\"json\").load(\"/data/userEvents.json\").toDF()",
     "outputs" : [ {
       "name" : "stdout",
       "output_type" : "stream",
-      "text" : "sqlContext: org.apache.spark.sql.SQLContext = org.apache.spark.sql.SQLContext@39fe5287\nimport sqlContext.implicits._\nuserEventsDF: org.apache.spark.sql.DataFrame = [userId: string, eventType: string, dateTimeMillis: bigint]\n"
+      "text" : "sqlContext: org.apache.spark.sql.SQLContext = org.apache.spark.sql.SQLContext@212aaee8\nimport sqlContext.implicits._\nuserEventsDF: org.apache.spark.sql.DataFrame = [dateTimeMillis: bigint, eventType: string, userId: bigint]\n"
     }, {
       "metadata" : { },
       "data" : {
-        "text/html" : "[userId: string, eventType: string, dateTimeMillis: bigint]\n <div class='pull-right text-info'><small>331 milliseconds</small></div>"
+        "text/html" : "[dateTimeMillis: bigint, eventType: string, userId: bigint]\n <div class='pull-right text-info'><small>4 seconds 162 milliseconds</small></div>"
       },
       "output_type" : "execute_result",
-      "execution_count" : 45
+      "execution_count" : 2
     } ]
   }, {
     "metadata" : {
@@ -62,38 +62,18 @@
       "collapsed" : false
     },
     "cell_type" : "code",
-    "source" : "userEventsDF.registerTempTable(\"user_events\")\nsqlContext.sql(\"\"\"\n  select userId,count(*) cnt \n  from user_events \n  where eventType='P' \n  group by userId \n  order by cnt desc \n  limit 10\n\"\"\").foreach(println)",
+    "source" : "userEventsDF.filter(\"eventType = 'P'\").groupBy(\"userId\").count().orderBy($\"count\".desc).show(10)",
     "outputs" : [ {
       "name" : "stdout",
       "output_type" : "stream",
-      "text" : "[211554,122]\n[35259,120]\n[105339,120]\n[187464,120]\n[157899,119]\n[91542,118]\n[172572,118]\n[146949,118]\n[210897,118]\n[98112,117]\n"
+      "text" : "+------+-----+\n|userId|count|\n+------+-----+\n| 42048| 1061|\n| 16644| 1060|\n|189435| 1053|\n|196005| 1053|\n|161184| 1051|\n|195348| 1051|\n| 47961| 1050|\n|146949| 1050|\n| 21462| 1050|\n| 87162| 1050|\n+------+-----+\n\n"
     }, {
       "metadata" : { },
       "data" : {
-        "text/html" : "\n <div class='pull-right text-info'><small>2 seconds 255 milliseconds</small></div>"
+        "text/html" : "\n <div class='pull-right text-info'><small>4 seconds 976 milliseconds</small></div>"
       },
       "output_type" : "execute_result",
-      "execution_count" : 46
-    } ]
-  }, {
-    "metadata" : {
-      "trusted" : true,
-      "input_collapsed" : false,
-      "collapsed" : false
-    },
-    "cell_type" : "code",
-    "source" : "userEventsDF.show()",
-    "outputs" : [ {
-      "name" : "stdout",
-      "output_type" : "stream",
-      "text" : "userId eventType dateTimeMillis\n219    B         1429738027237 \n438    P         1429738027237 \n657    P         1429738027237 \n876    P         1429738027237 \n1095   B         1429738027237 \n1314   P         1429738027237 \n1533   B         1429738027237 \n1752   B         1429738027237 \n1971   P         1429738027237 \n2190   P         1429738027237 \n2409   P         1429738027237 \n2628   P         1429738027237 \n2847   B         1429738027238 \n3066   P         1429738027238 \n3285   P         1429738027238 \n3504   P         1429738027238 \n3723   P         1429738027238 \n3942   B         1429738027238 \n4161   P         1429738027238 \n4380   B         1429738027238 \n"
-    }, {
-      "metadata" : { },
-      "data" : {
-        "text/html" : "\n <div class='pull-right text-info'><small>294 milliseconds</small></div>"
-      },
-      "output_type" : "execute_result",
-      "execution_count" : 43
+      "execution_count" : 3
     } ]
   }, {
     "metadata" : {
@@ -106,14 +86,14 @@
     "outputs" : [ {
       "name" : "stdout",
       "output_type" : "stream",
-      "text" : "root\n |-- userId: string (nullable = true)\n |-- eventType: string (nullable = true)\n |-- dateTimeMillis: long (nullable = false)\n\n"
+      "text" : "root\n |-- dateTimeMillis: long (nullable = true)\n |-- eventType: string (nullable = true)\n |-- userId: long (nullable = true)\n\n"
     }, {
       "metadata" : { },
       "data" : {
-        "text/html" : "\n <div class='pull-right text-info'><small>292 milliseconds</small></div>"
+        "text/html" : "\n <div class='pull-right text-info'><small>385 milliseconds</small></div>"
       },
       "output_type" : "execute_result",
-      "execution_count" : 28
+      "execution_count" : 4
     } ]
   }, {
     "metadata" : {
@@ -122,18 +102,38 @@
       "collapsed" : false
     },
     "cell_type" : "code",
-    "source" : "userEventsDF.filter(\"eventType = 'P'\").groupBy(\"userId\").count().show()",
+    "source" : "userEventsDF.registerTempTable(\"user_events\")\n\nsqlContext.sql(\"\"\"\n  select userId,count(*) cnt \n  from user_events \n  where eventType='P' \n  group by userId \n  order by cnt desc \n  limit 10\n\"\"\").foreach(println)",
     "outputs" : [ {
       "name" : "stdout",
       "output_type" : "stream",
-      "text" : "userId count\n29127  100  \n22557  101  \n65262  100  \n186369 96   \n140379 111  \n211992 96   \n183084 107  \n147606 98   \n117384 114  \n183741 85   \n218562 90   \n28689  84   \n9417   110  \n202137 102  \n2847   101  \n144321 93   \n94389  112  \n101616 87   \n55626  97   \n98331  87   \n"
+      "text" : "[42048,1061]\n[16644,1060]\n[189435,1053]\n[196005,1053]\n[161184,1051]\n[195348,1051]\n[47961,1050]\n[21462,1050]\n[87162,1050]\n[146949,1050]\n"
     }, {
       "metadata" : { },
       "data" : {
-        "text/html" : "\n <div class='pull-right text-info'><small>2 seconds 376 milliseconds</small></div>"
+        "text/html" : "\n <div class='pull-right text-info'><small>2 seconds 785 milliseconds</small></div>"
       },
       "output_type" : "execute_result",
-      "execution_count" : 34
+      "execution_count" : 5
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "import org.joda.time._\nsqlContext.udf.register(\"hoursInterval\", (d1: Long, d2: Long) => new Period(d1,d2).getHours)\nsqlContext.udf.register(\"dateTime\", (d1: Long) => new DateTime(d1).toString)\n\nsqlContext.sql(\"\"\"\n  select u1.userId, dateTime(u1.dateTimeMillis), dateTime(u2.dateTimeMillis)\n  from user_events u1 join user_events u2\n  on u1.userId=u2.userId and hoursInterval(u1.dateTimeMillis, u2.dateTimeMillis) > 5 \n  and u1.dateTimeMillis < u2.dateTimeMillis\n  limit 20\n\"\"\").show",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "+------+--------------------+--------------------+\n|userId|                  c1|                  c2|\n+------+--------------------+--------------------+\n| 32631|1970-01-12T15:45:...|1970-01-16T00:34:...|\n| 32631|1970-01-12T15:45:...|1970-01-16T06:32:...|\n| 32631|1970-01-12T15:45:...|1970-01-17T15:37:...|\n| 32631|1970-01-12T15:45:...|1970-01-14T01:09:...|\n| 32631|1970-01-12T15:45:...|1970-01-20T05:06:...|\n| 32631|1970-01-12T15:45:...|1970-01-19T05:23:...|\n| 32631|1970-01-12T15:45:...|1970-01-20T03:27:...|\n| 32631|1970-01-12T15:45:...|1970-01-17T07:44:...|\n| 32631|1970-01-12T15:45:...|1970-01-13T09:47:...|\n| 32631|1970-01-12T15:45:...|1970-01-13T09:00:...|\n| 32631|1970-01-12T15:45:...|1970-01-15T14:24:...|\n| 32631|1970-01-12T15:45:...|1970-01-14T00:57:...|\n| 32631|1970-01-12T15:45:...|1970-01-18T23:22:...|\n| 32631|1970-01-12T15:45:...|1970-01-23T14:03:...|\n| 32631|1970-01-12T15:45:...|1970-01-19T01:22:...|\n| 32631|1970-01-12T15:45:...|1970-01-19T04:31:...|\n| 32631|1970-01-12T15:45:...|1970-01-14T06:38:...|\n| 32631|1970-01-12T15:45:...|1970-01-15T21:55:...|\n| 32631|1970-01-12T15:45:...|1970-01-21T12:58:...|\n| 32631|1970-01-12T15:45:...|1970-01-18T15:11:...|\n+------+--------------------+--------------------+\n\nimport org.joda.time._\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>5 seconds 519 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 6
     } ]
   } ],
   "nbformat" : 4

@@ -26,14 +26,14 @@
     "outputs" : [ {
       "name" : "stdout",
       "output_type" : "stream",
-      "text" : "warning: there were 1 feature warning(s); re-run with -feature for details\n219,B,2015-04-22T23:27:07.208+02:00\n438,B,2015-04-22T23:27:07.208+02:00\n657,B,2015-04-22T23:27:07.208+02:00\n876,P,2015-04-22T23:27:07.208+02:00\n1095,P,2015-04-22T23:27:07.208+02:00\n1314,B,2015-04-22T23:27:07.208+02:00\n1533,B,2015-04-22T23:27:07.208+02:00\n1752,P,2015-04-22T23:27:07.208+02:00\n1971,B,2015-04-22T23:27:07.208+02:00\n2190,P,2015-04-22T23:27:07.208+02:00\n\nimport sys.process._\n"
+      "text" : "warning: there were 1 feature warning(s); re-run with -feature for details\n219,B,1970-01-18T09:46:28.651+01:00\n438,P,1970-01-17T19:32:37.536+01:00\n657,P,1970-01-09T03:36:02.751+01:00\n876,B,1970-01-10T12:22:00.884+01:00\n1095,P,1970-01-10T01:36:03.044+01:00\n1314,P,1970-01-19T17:48:01.284+01:00\n1533,P,1970-01-07T21:34:42.142+01:00\n1752,P,1970-01-18T19:02:27.071+01:00\n1971,P,1970-01-06T17:04:16.665+01:00\n2190,P,1970-01-24T15:24:11.537+01:00\n\nimport sys.process._\n"
     }, {
       "metadata" : { },
       "data" : {
-        "text/html" : "\n <div class='pull-right text-info'><small>389 milliseconds</small></div>"
+        "text/html" : "\n <div class='pull-right text-info'><small>628 milliseconds</small></div>"
       },
       "output_type" : "execute_result",
-      "execution_count" : 23
+      "execution_count" : 1
     } ]
   }, {
     "metadata" : {
@@ -50,10 +50,10 @@
     }, {
       "metadata" : { },
       "data" : {
-        "text/html" : "\n <div class='pull-right text-info'><small>269 milliseconds</small></div>"
+        "text/html" : "\n <div class='pull-right text-info'><small>604 milliseconds</small></div>"
       },
       "output_type" : "execute_result",
-      "execution_count" : 24
+      "execution_count" : 2
     } ]
   }, {
     "metadata" : {
@@ -62,18 +62,18 @@
       "collapsed" : false
     },
     "cell_type" : "code",
-    "source" : "val aggregateRdd = \n   sparkContext.textFile(\"/data/userEvents\")\n    .map(parseToUserEvent)\n    .filter(_.isPageView)\n    .groupBy(_.userId)   \n    .map { case (userId, userEvents) => \n          s\"$userId,${userEvents.size}\" }",
+    "source" : "val preparedRdd = \n   sparkContext.textFile(\"/data/userEvents\")\n    .map(parseToUserEvent)\n    .filter(_.isPageView)",
     "outputs" : [ {
       "name" : "stdout",
       "output_type" : "stream",
-      "text" : "aggregateRdd: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[66] at map at <console>:81\n"
+      "text" : "preparedRdd: org.apache.spark.rdd.RDD[UserEvent] = MapPartitionsRDD[3] at filter at <console>:49\n"
     }, {
       "metadata" : { },
       "data" : {
-        "text/html" : "\n <div class='pull-right text-info'><small>1 second 306 milliseconds</small></div>"
+        "text/html" : "MapPartitionsRDD[3] at filter at &lt;console&gt;:49\n <div class='pull-right text-info'><small>863 milliseconds</small></div>"
       },
       "output_type" : "execute_result",
-      "execution_count" : 25
+      "execution_count" : 3
     } ]
   }, {
     "metadata" : {
@@ -82,34 +82,74 @@
       "collapsed" : false
     },
     "cell_type" : "code",
-    "source" : "aggregateRdd.saveAsTextFile(\"/data/pageViewAgg\")",
-    "outputs" : [ {
-      "metadata" : { },
-      "data" : {
-        "text/html" : "\n <div class='pull-right text-info'><small>771 milliseconds</small></div>"
-      },
-      "output_type" : "execute_result",
-      "execution_count" : 27
-    } ]
-  }, {
-    "metadata" : {
-      "trusted" : true,
-      "input_collapsed" : false,
-      "collapsed" : false
-    },
-    "cell_type" : "code",
-    "source" : "println(\"head /data/pageViewAgg/part-00000\"!!)",
+    "source" : "val aggregateRdd = preparedRdd.groupBy(_.userId)\n    .sortBy(_._2.size, false)\n    .map { case (userId, userEvents) => \n          s\"$userId,${userEvents.size}\" }",
     "outputs" : [ {
       "name" : "stdout",
       "output_type" : "stream",
-      "text" : "warning: there were 1 feature warning(s); re-run with -feature for details\n80154,103\n183741,85\n44019,106\n26499,94\n41610,93\n96360,98\n108405,104\n166221,101\n75336,109\n65700,109\n\n"
+      "text" : "aggregateRdd: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[11] at map at <console>:50\n"
     }, {
       "metadata" : { },
       "data" : {
-        "text/html" : "\n <div class='pull-right text-info'><small>325 milliseconds</small></div>"
+        "text/html" : "MapPartitionsRDD[11] at map at &lt;console&gt;:50\n <div class='pull-right text-info'><small>8 seconds 96 milliseconds</small></div>"
       },
       "output_type" : "execute_result",
-      "execution_count" : 28
+      "execution_count" : 4
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "aggregateRdd.take(10).foreach(println)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "42048,1061\n16644,1060\n189435,1053\n196005,1053\n161184,1051\n195348,1051\n47961,1050\n21462,1050\n146949,1050\n87162,1050\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>6 seconds 45 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 5
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "aggregateRdd.saveAsTextFile(\"/data/pageViewAgg5\")",
+    "outputs" : [ {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>7 seconds 44 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 6
+    } ]
+  }, {
+    "metadata" : {
+      "trusted" : true,
+      "input_collapsed" : false,
+      "collapsed" : false
+    },
+    "cell_type" : "code",
+    "source" : "println(\"head /data/pageViewAgg5/part-00000\"!!)",
+    "outputs" : [ {
+      "name" : "stdout",
+      "output_type" : "stream",
+      "text" : "warning: there were 1 feature warning(s); re-run with -feature for details\n42048,1061\n16644,1060\n189435,1053\n196005,1053\n161184,1051\n195348,1051\n47961,1050\n21462,1050\n146949,1050\n87162,1050\n\n"
+    }, {
+      "metadata" : { },
+      "data" : {
+        "text/html" : "\n <div class='pull-right text-info'><small>414 milliseconds</small></div>"
+      },
+      "output_type" : "execute_result",
+      "execution_count" : 7
     } ]
   }, {
     "metadata" : {
